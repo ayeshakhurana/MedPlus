@@ -24,7 +24,7 @@ function initDb() {
       date TEXT NOT NULL,
       time TEXT NOT NULL,
       reason TEXT NOT NULL,
-      status TEXT NOT NULL DEFAULT 'booked',
+      status TEXT NOT NULL DEFAULT 'pending',
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
@@ -53,6 +53,12 @@ function initDb() {
       total INTEGER NOT NULL,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
+  `);
+
+  // migrate older status values (from earlier versions)
+  db.exec(`
+    UPDATE appointments SET status = 'booked' WHERE status = 'approved';
+    UPDATE appointments SET status = 'denied' WHERE status = 'declined';
   `);
 
   const invCount = db.prepare("SELECT COUNT(*) as c FROM inventory").get().c;

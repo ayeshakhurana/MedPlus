@@ -94,6 +94,8 @@ Password → <strong>1234</strong>
               <th>Date</th>
               <th>Time</th>
               <th>Reason</th>
+              <th>Status</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody id="doctor-appointments-body"></tbody>
@@ -143,7 +145,6 @@ Password → <strong>1234</strong>
           <button class="btn btn-sm" type="submit">Generate Bill</button>
           <p id="billing-message" class="success"></p>
         </form>
-        <p class="hint">Tip: After generating a bill, open <strong>Bill</strong> page to print.</p>
       </div>
     </div>
   </div>
@@ -173,6 +174,22 @@ Password → <strong>1234</strong>
       <div class="card">
         <h4>My Records</h4>
         <ul id="patient-records-list"></ul>
+      </div>
+
+      <div class="card" style="grid-column: 1 / -1;">
+        <h4>My Appointments</h4>
+        <table>
+          <thead>
+            <tr>
+              <th>Doctor</th>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Reason</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="patient-appointments-body"></tbody>
+        </table>
       </div>
 
       <div class="card" style="grid-column: 1 / -1;">

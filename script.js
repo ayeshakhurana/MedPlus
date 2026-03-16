@@ -32,6 +32,7 @@ const appointmentMessage = document.getElementById("appointment-message");
 
 const patientRecordsList = document.getElementById("patient-records-list");
 const patientBillsBody = document.getElementById("patient-bills-body");
+const patientAppointmentsBody = document.getElementById("patient-appointments-body");
 
 const appointmentDoctorSelect = document.getElementById("appointment-doctor");
 
@@ -91,17 +92,57 @@ async function renderDoctorView() {
 
   if (!apps.appointments || apps.appointments.length === 0) {
     const row = document.createElement("tr");
-    row.innerHTML = `<td colspan="4">No appointments yet.</td>`;
+    row.innerHTML = `<td colspan="6">No appointments yet.</td>`;
     doctorAppointmentsBody.appendChild(row);
   } else {
     apps.appointments.forEach((a) => {
       const row = document.createElement("tr");
+      const status = a.status || "pending";
+      const canDecide = status === "pending";
       row.innerHTML = `
         <td>${a.patientName || a.patientUsername || ""}</td>
         <td>${a.date}</td>
         <td>${a.time}</td>
         <td>${a.reason}</td>
+        <td>${status}</td>
+        <td>
+          ${
+            canDecide
+              ? `<button class="btn btn-sm" type="button" data-action="book">Book</button>
+                 <button class="btn btn-sm" type="button" data-action="deny" style="background:transparent;color:#ff5c72;border:2px solid #ff5c72;box-shadow:none;">Deny</button>`
+              : `—`
+          }
+        </td>
       `;
+
+      if (canDecide) {
+        const bookBtn = row.querySelector('button[data-action="book"]');
+        const denyBtn = row.querySelector('button[data-action="deny"]');
+
+        bookBtn.addEventListener("click", async () => {
+          try {
+            await api(`/api/appointments/${a.id}/status`, {
+              method: "PATCH",
+              body: JSON.stringify({ status: "booked" }),
+            });
+            renderDoctorView();
+          } catch (e) {
+            alert(e.message || "Failed to book");
+          }
+        });
+
+        denyBtn.addEventListener("click", async () => {
+          try {
+            await api(`/api/appointments/${a.id}/status`, {
+              method: "PATCH",
+              body: JSON.stringify({ status: "denied" }),
+            });
+            renderDoctorView();
+          } catch (e) {
+            alert(e.message || "Failed to deny");
+          }
+        });
+      }
       doctorAppointmentsBody.appendChild(row);
     });
   }
@@ -123,11 +164,13 @@ async function renderPatientView() {
   patientRecordsList.innerHTML = "";
   patientBillsBody.innerHTML = "";
   appointmentDoctorSelect.innerHTML = "";
+  patientAppointmentsBody.innerHTML = "";
 
-  const [doctorsRes, recordsRes, billsRes] = await Promise.all([
+  const [doctorsRes, recordsRes, billsRes, appsRes] = await Promise.all([
     api("/api/doctors"),
     api("/api/records"),
     api("/api/bills"),
+    api("/api/appointments"),
   ]);
 
   // doctors dropdown
@@ -187,6 +230,26 @@ async function renderPatientView() {
         window.open("bill.html", "_blank");
       });
       patientBillsBody.appendChild(row);
+    });
+  }
+
+  // appointments
+  if (!appsRes.appointments || appsRes.appointments.length === 0) {
+    const row = document.createElement("tr");
+    row.innerHTML = `<td colspan="5">No appointment requests yet.</td>`;
+    patientAppointmentsBody.appendChild(row);
+  } else {
+    appsRes.appointments.forEach((a) => {
+      const row = document.createElement("tr");
+      const status = a.status || "pending";
+      row.innerHTML = `
+        <td>${a.doctorName || a.doctorUsername || ""}</td>
+        <td>${a.date}</td>
+        <td>${a.time}</td>
+        <td>${a.reason}</td>
+        <td>${status}</td>
+      `;
+      patientAppointmentsBody.appendChild(row);
     });
   }
 }
@@ -337,8 +400,9 @@ appointmentForm.addEventListener("submit",function(event){
     body: JSON.stringify({ doctorId, date, time, reason }),
   })
     .then(() => {
-      appointmentMessage.textContent = "Appointment booked successfully.";
+      appointmentMessage.textContent = "Appointment request sent (pending).";
       appointmentForm.reset();
+      renderPatientView();
     })
     .catch((e) => {
       appointmentMessage.textContent = e.message || "Failed to book appointment";

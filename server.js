@@ -203,10 +203,34 @@ app.post("/api/appointments", auth, requireRole("patient"), (req, res) => {
 
   const info = db
     .prepare(
-      "INSERT INTO appointments (doctor_id, patient_id, date, time, reason) VALUES (?,?,?,?,?)"
+      "INSERT INTO appointments (doctor_id, patient_id, date, time, reason, status) VALUES (?,?,?,?,?, 'pending')"
     )
     .run(doctorId, req.user.id, date, time, reason);
   res.json({ id: info.lastInsertRowid });
+});
+
+app.patch("/api/appointments/:id/status", auth, requireRole("doctor"), (req, res) => {
+  const id = Number(req.params.id);
+  const status = String(req.body.status || "");
+
+  if (!id) return res.status(400).json({ error: "Invalid appointment id" });
+  if (status !== "booked" && status !== "denied") {
+    return res.status(400).json({ error: "Invalid status" });
+  }
+
+  const appt = db
+    .prepare("SELECT id, doctor_id as doctorId, status FROM appointments WHERE id = ?")
+    .get(id);
+  if (!appt) return res.status(404).json({ error: "Appointment not found" });
+  if (appt.doctorId !== req.user.id) return res.status(403).json({ error: "Forbidden" });
+
+  // only allow decision when pending (keep simple + predictable)
+  if (appt.status !== "pending") {
+    return res.status(409).json({ error: "Appointment already decided" });
+  }
+
+  db.prepare("UPDATE appointments SET status = ? WHERE id = ?").run(status, id);
+  res.json({ ok: true });
 });
 
 // ---------- Records ----------
