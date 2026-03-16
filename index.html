@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Hospital Management System</title>
+
+<style>
+
+/* ======================
+   GLOBAL STYLES
+====================== */
+
+
+</style>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header>
+  <div>
+    <h1>🏥 MedPlus : Hospital Management System</h1>
+    <p>Doctor & Patient Portal</p>
+  </div>
+
+  <button id="map" onclick="window.location.href='hospital.html'">
+    📍 View Hospital
+  </button>
+</header>
+
+<main>
+
+<div id="login-section">
+
+<h2>Welcome Back 👋</h2>
+<p class="sub">Sign in to your portal</p>
+
+<div class="tabs">
+<button class="tab active" onclick="setRole('doctor',this)">🩺 Doctor</button>
+<button class="tab" onclick="setRole('patient',this)">🧑‍⚕️ Patient</button>
+</div>
+
+<form id="login-form">
+
+<select id="role" style="display:none">
+<option value="doctor">Doctor</option>
+<option value="patient">Patient</option>
+</select>
+
+<div class="auth-mode">
+  <button type="button" class="auth-tab auth-tab-active" data-mode="login">Login</button>
+  <button type="button" class="auth-tab" data-mode="signup">Sign up</button>
+</div>
+<input type="hidden" id="auth-mode" value="login">
+
+<label>Username</label>
+<input id="username" type="text" placeholder="Enter username" required>
+
+<label>Password</label>
+<input id="password" type="password" placeholder="••••••••" required>
+
+<button type="submit" class="btn" style="width:100%">🔐 Login</button>
+
+</form>
+
+<div class="hint">
+🔑 <strong>Demo Credentials</strong><br>
+Doctor → <strong>doctor1</strong>, <strong>doctor2</strong><br>
+Patient → <strong>patient1</strong>, <strong>patient2</strong><br>
+Password → <strong>1234</strong>
+</div>
+
+<p id="login-error" class="error"></p>
+
+</div>
+
+<section id="dashboard-section" class="hidden">
+  <div class="topbar">
+    <div>
+      <h2 id="dashboard-title">Dashboard</h2>
+      <p id="welcome-text"></p>
+    </div>
+    <button id="logout-btn">Logout</button>
+  </div>
+
+  <div id="doctor-dashboard" class="hidden">
+    <div class="grid">
+      <div class="card">
+        <h4>Appointments</h4>
+        <table>
+          <thead>
+            <tr>
+              <th>Patient</th>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Reason</th>
+            </tr>
+          </thead>
+          <tbody id="doctor-appointments-body"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h4>Add Patient Record</h4>
+        <form id="doctor-record-form">
+          <label>Patient Username</label>
+          <input id="record-patient-name" type="text" placeholder="e.g. patient1" required>
+
+          <label>Notes</label>
+          <textarea id="record-notes" placeholder="Write notes..." required></textarea>
+
+          <button class="btn btn-sm" type="submit">Save Record</button>
+          <p id="doctor-record-message" class="success"></p>
+        </form>
+      </div>
+
+      <div class="card">
+        <h4>Inventory</h4>
+        <table>
+          <thead>
+            <tr>
+              <th>Medicine</th>
+              <th>Stock</th>
+              <th>Price (₹)</th>
+            </tr>
+          </thead>
+          <tbody id="inventory-body"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h4>Generate Bill</h4>
+        <form id="billing-form">
+          <label>Patient Username</label>
+          <input id="bill-patient-name" type="text" placeholder="e.g. patient1" required>
+
+          <label>Medicine</label>
+          <input id="bill-medicine" type="text" placeholder="e.g. Paracetamol" required>
+
+          <label>Quantity</label>
+          <input id="bill-quantity" type="number" min="1" value="1" required>
+
+          <button class="btn btn-sm" type="submit">Generate Bill</button>
+          <p id="billing-message" class="success"></p>
+        </form>
+        <p class="hint">Tip: After generating a bill, open <strong>Bill</strong> page to print.</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="patient-dashboard" class="hidden">
+    <div class="grid">
+      <div class="card">
+        <h4>Book Appointment</h4>
+        <form id="appointment-form">
+          <label>Doctor</label>
+          <select id="appointment-doctor" required></select>
+
+          <label>Date</label>
+          <input id="appointment-date" type="date" required>
+
+          <label>Time</label>
+          <input id="appointment-time" type="time" required>
+
+          <label>Reason</label>
+          <input id="appointment-reason" type="text" placeholder="Reason for visit" required>
+
+          <button class="btn btn-sm" type="submit">Book</button>
+          <p id="appointment-message" class="success"></p>
+        </form>
+      </div>
+
+      <div class="card">
+        <h4>My Records</h4>
+        <ul id="patient-records-list"></ul>
+      </div>
+
+      <div class="card" style="grid-column: 1 / -1;">
+        <h4>My Bills</h4>
+        <table>
+          <thead>
+            <tr>
+              <th>Medicine</th>
+              <th>Qty</th>
+              <th>Total (₹)</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="patient-bills-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+<script>
+function setRole(v,b){
+document.getElementById('role').value=v;
+document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+b.classList.add('active');
+}
+</script>
+
+<script src="script.js"></script>
+
+</body>
+</html>

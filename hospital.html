@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hospital Interactive Map</title>
+</head>
+
+<body>
+<h2 align="center"> MedPlus : Hospital Map</h2>
+<img src="image.png" usemap="#hospitalmap" width="1600" height="800">
+<map name="hospitalmap">
+    <area shape="rect"
+          coords="100,500,500,700"
+          href="opd.html"
+          alt="OPD">
+    <area shape="circle"
+          coords="800,600,120"
+          href="diagnostics.html"
+          alt="Diagnostic Lab">
+    <area shape="poly"
+          coords="1100,520,1500,520,1560,640,1300,720,1080,640"
+          href="emergency.html"
+          alt="Emergency">
+</map>
+</body>
+</html>

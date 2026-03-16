@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Patient Bill</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',sans-serif}
+body{background:#e8edf5;display:flex;align-items:center;justify-content:center;min-height:100vh}
+.bill{background:#fff;width:420px;padding:32px 36px;border-radius:4px;box-shadow:0 4px 24px rgba(0,0,0,.13)}
+
+.top{text-align:center;border-bottom:2px dashed #cdd5e0;padding-bottom:16px;margin-bottom:16px}
+.top .logo{font-size:2rem;margin-bottom:4px}
+.top h2{font-size:1.15rem;font-weight:700;letter-spacing:.5px;color:#1a2340}
+.top p{font-size:.78rem;color:#6b7a99;margin-top:2px}
+
+.info{margin-bottom:16px}
+.info p{display:flex;justify-content:space-between;font-size:.82rem;padding:3px 0;color:#444}
+.info p strong{color:#1a2340}
+
+table{width:100%;border-collapse:collapse;font-size:.82rem;margin-bottom:16px}
+thead tr{background:#f0f4ff}
+th{padding:7px 10px;text-align:left;font-size:.74rem;text-transform:uppercase;letter-spacing:.4px;color:#6b7a99;border-bottom:2px solid #dce4f5}
+td{padding:8px 10px;border-bottom:1px solid #f0f4ff;color:#1a2340}
+
+.total-row{display:flex;justify-content:space-between;padding:10px 0;border-top:2px dashed #cdd5e0;font-weight:700;font-size:.95rem;color:#1a2340}
+
+.note{font-size:.74rem;color:#aab;text-align:center;margin:14px 0 18px;font-style:italic}
+
+.actions{display:flex;gap:10px}
+.actions button{flex:1;padding:10px;border:none;border-radius:8px;font-weight:700;font-size:.85rem;cursor:pointer;transition:.2s}
+.btn-print{background:linear-gradient(120deg,#2e7df7,#0abf8f);color:#fff;box-shadow:0 3px 10px rgba(46,125,247,.25)}
+.btn-back{background:#f0f4ff;color:#2e7df7;border:2px solid #dce4f5}
+.btn-print:hover{opacity:.88}.btn-back:hover{background:#e0e8ff}
+@media print{.actions{display:none}body{background:#fff}.bill{box-shadow:none}}
+</style>
+</head>
+<body>
+<div class="bill">
+  <div class="top">
+    <div class="logo">🏥</div>
+    <h2>Hospital Management System</h2>
+    <p>Official Patient Bill</p>
+  </div>
+
+  <div class="info">
+    <p><strong>Bill No.</strong> <span id="bill-number"></span></p>
+    <p><strong>Date &amp; Time</strong> <span id="bill-datetime"></span></p>
+    <p><strong>Patient</strong> <span id="bill-patient-name-text"></span></p>
+  </div>
+
+  <table>
+    <thead><tr><th>Medicine</th><th>Qty</th><th>Unit (₹)</th><th>Total (₹)</th></tr></thead>
+    <tbody>
+      <tr>
+        <td id="bill-medicine-text"></td>
+        <td id="bill-quantity-text"></td>
+        <td id="bill-unit-price-text"></td>
+        <td id="bill-total-text"></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="total-row"><span>Amount Due</span><span>₹ <span id="bill-due"></span></span></div>
+  <div class="actions">
+    <button class="btn-print" onclick="window.print()">🖨 Print Bill</button>
+    <button class="btn-back" onclick="window.location.href='index.html'">← Back</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const bill = JSON.parse(localStorage.getItem("lastBill") || "null");
+  if(!bill){document.body.innerHTML="<p style='padding:2rem;font-family:sans-serif'>No bill found. Generate one from the dashboard.</p>";return;}
+  document.getElementById("bill-number").textContent = bill.number || "BILL-"+Date.now();
+  document.getElementById("bill-datetime").textContent = bill.dateTime || "";
+  document.getElementById("bill-patient-name-text").textContent = bill.patient || "";
+  document.getElementById("bill-medicine-text").textContent = bill.medicine || "";
+  document.getElementById("bill-quantity-text").textContent = bill.quantity || "";
+  document.getElementById("bill-unit-price-text").textContent = bill.unitPrice || "";
+  document.getElementById("bill-total-text").textContent = bill.total || "";
+  document.getElementById("bill-due").textContent = bill.total || "";
+})();
+</script>
+</body>
+</html>
