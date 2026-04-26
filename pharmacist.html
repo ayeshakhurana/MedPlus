@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MedPlus — Pharmacist Dashboard</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; color: #1e3a5f; min-height: 100vh; }
+
+/* Header */
+header { background: linear-gradient(135deg, #1e3a5f, #2980b9); color: #fff; padding: 16px 28px;
+  display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 12px rgba(0,0,0,.25); }
+header h1 { font-size: 1.3rem; }
+header p  { font-size: .82rem; opacity: .8; margin-top: 2px; }
+header .logout-btn { background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.4);
+  color: #fff; padding: 8px 18px; border-radius: 8px; cursor: pointer; font-size: .9rem;
+  transition: background .2s; }
+header .logout-btn:hover { background: rgba(255,255,255,.3); }
+
+/* Stats */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px; padding: 20px 24px 0; }
+.stat-card { background: #fff; border-radius: 12px; padding: 18px 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.07); }
+.stat-card .num  { font-size: 2rem; font-weight: 800; }
+.stat-card .label { font-size: .8rem; color: #666; margin-top: 4px; }
+.stat-card.blue   .num { color: #2980b9; }
+.stat-card.orange .num { color: #e67e22; }
+.stat-card.red    .num { color: #e74c3c; }
+.stat-card.green  .num { color: #27ae60; }
+
+/* Tabs */
+.tabs { display: flex; gap: 0; padding: 18px 24px 0; }
+.tab-btn { padding: 10px 28px; background: #dce8f5; border: none; cursor: pointer;
+  font-size: .93rem; font-weight: 600; color: #2980b9; transition: .2s;
+  border-radius: 10px 10px 0 0; margin-right: 4px; }
+.tab-btn.active { background: #fff; color: #1e3a5f; box-shadow: 0 -2px 8px rgba(0,0,0,.06); }
+
+/* Content area */
+.content { background: #fff; margin: 0 24px 24px; border-radius: 0 12px 12px 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.07); padding: 24px; }
+.tab-section.hidden { display: none; }
+
+/* Table */
+table { width: 100%; border-collapse: collapse; font-size: .87rem; }
+th { background: #f0f4f8; padding: 10px 12px; text-align: left; font-weight: 700;
+  color: #1e3a5f; border-bottom: 2px solid #d0dce8; }
+td { padding: 10px 12px; border-bottom: 1px solid #eef2f6; vertical-align: top; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #f8fbff; }
+
+/* Badges */
+.badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: .75rem;
+  font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.badge-pending  { background: #fff3cd; color: #856404; }
+.badge-verified { background: #cce5ff; color: #004085; }
+.badge-approved { background: #d4edda; color: #155724; }
+.badge-dispensed{ background: #d1ecf1; color: #0c5460; }
+.badge-flagged  { background: #f8d7da; color: #721c24; }
+.badge-rejected { background: #e2e3e5; color: #383d41; }
+
+/* Buttons */
+.btn { padding: 7px 16px; border: none; border-radius: 8px; cursor: pointer; font-size: .83rem;
+  font-weight: 600; transition: .2s; }
+.btn-primary   { background: #2980b9; color: #fff; }
+.btn-primary:hover   { background: #1c6ea4; }
+.btn-success   { background: #27ae60; color: #fff; }
+.btn-success:hover   { background: #1e8449; }
+.btn-warning   { background: #e67e22; color: #fff; }
+.btn-warning:hover   { background: #ca6f1e; }
+.btn-danger    { background: #e74c3c; color: #fff; }
+.btn-danger:hover    { background: #c0392b; }
+.btn-secondary { background: #95a5a6; color: #fff; }
+.btn-secondary:hover { background: #717d7e; }
+.btn-sm { padding: 5px 12px; font-size: .78rem; }
+
+.actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* AI analysis box */
+.ai-box { background: #f0f8ff; border-left: 4px solid #2980b9; padding: 12px 14px;
+  border-radius: 6px; margin-top: 8px; font-size: .83rem; line-height: 1.6; }
+.ai-box.risk-HIGH    { border-color: #e74c3c; background: #fff5f5; }
+.ai-box.risk-MODERATE{ border-color: #e67e22; background: #fffaf0; }
+.ai-box.risk-SAFE    { border-color: #27ae60; background: #f0fff4; }
+.warning-item { display: flex; align-items: flex-start; gap: 8px; margin-top: 6px; }
+.risk-HIGH    .risk-badge { background: #e74c3c; color: #fff; }
+.risk-MODERATE .risk-badge { background: #e67e22; color: #fff; }
+.risk-badge { padding: 2px 8px; border-radius: 4px; font-size: .72rem; font-weight: 700; white-space: nowrap; }
+
+/* Form elements */
+label { display: block; margin: 10px 0 4px; font-size: .85rem; font-weight: 600; color: #2c3e50; }
+input, select, textarea { width: 100%; padding: 9px 12px; border: 1px solid #d0dce8;
+  border-radius: 8px; font-size: .88rem; outline: none; transition: border .2s; }
+input:focus, select:focus, textarea:focus { border-color: #2980b9; box-shadow: 0 0 0 3px rgba(41,128,185,.12); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+.section-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 16px; color: #1e3a5f; }
+.msg { margin-top: 8px; font-size: .85rem; font-weight: 600; }
+.msg.success { color: #27ae60; }
+.msg.error   { color: #e74c3c; }
+
+/* Inventory edit row */
+.inv-edit { display: flex; gap: 8px; align-items: center; }
+.inv-edit input { width: 80px; }
+
+/* Loading */
+.loading { text-align: center; padding: 32px; color: #999; font-size: .9rem; }
+
+/* Notes textarea inline */
+.notes-area { width: 100%; padding: 6px 8px; border: 1px solid #d0dce8; border-radius: 6px;
+  font-size: .82rem; resize: vertical; min-height: 52px; }
+
+/* Risk progress bar */
+.risk-bar-wrap { display: flex; align-items: center; gap: 8px; margin: 4px 0; font-size: .82rem; }
+.risk-bar { flex: 1; height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden; }
+.risk-bar-fill { height: 100%; border-radius: 4px; }
+
+@media (max-width: 700px) {
+  .form-row { grid-template-columns: 1fr; }
+  .stats { grid-template-columns: 1fr 1fr; }
+  header { flex-direction: column; gap: 10px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>💊 MedPlus — Pharmacist Dashboard</h1>
+    <p id="pharm-welcome">Loading...</p>
+  </div>
+  <button class="logout-btn" id="logout-btn">Logout</button>
+</header>
+
+<div class="stats" id="stats-bar">
+  <div class="stat-card blue">
+    <div class="num" id="stat-pending">—</div>
+    <div class="label">Pending Rx</div>
+  </div>
+  <div class="stat-card orange">
+    <div class="num" id="stat-flagged">—</div>
+    <div class="label">Flagged Rx</div>
+  </div>
+  <div class="stat-card green">
+    <div class="num" id="stat-dispensed">—</div>
+    <div class="label">Dispensed Today</div>
+  </div>
+  <div class="stat-card blue">
+    <div class="num" id="stat-inventory">—</div>
+    <div class="label">Inventory Items</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('prescriptions',this)">📋 Prescriptions</button>
+  <button class="tab-btn" onclick="switchTab('inventory',this)">🏪 Inventory</button>
+</div>
+
+<div class="content">
+
+  <!-- ── PRESCRIPTIONS TAB ──────────────────────────────────── -->
+  <div id="tab-prescriptions" class="tab-section">
+    <div class="section-title">Prescription Queue</div>
+
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+      <select id="rx-filter" onchange="filterPrescriptions()">
+        <option value="all">All Statuses</option>
+        <option value="pending" selected>Pending</option>
+        <option value="verified">Verified</option>
+        <option value="approved">Approved</option>
+        <option value="dispensed">Dispensed</option>
+        <option value="flagged">Flagged</option>
+        <option value="rejected">Rejected</option>
+      </select>
+      <button class="btn btn-primary" onclick="loadPrescriptions()">↻ Refresh</button>
+    </div>
+
+    <div id="rx-loading" class="loading">Loading prescriptions...</div>
+
+    <table id="rx-table" style="display:none;">
+      <thead>
+        <tr>
+          <th>Patient</th><th>Doctor</th><th>Date</th>
+          <th>Medicines</th><th>Status</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="rx-body"></tbody>
+    </table>
+    <p id="rx-empty" style="display:none;color:#999;padding:16px 0;">No prescriptions in this category.</p>
+  </div>
+
+  <!-- ── INVENTORY TAB ──────────────────────────────────────── -->
+  <div id="tab-inventory" class="tab-section hidden">
+    <div class="section-title">Medicine Inventory</div>
+
+    <!-- Add medicine form -->
+    <div style="background:#f8fbff;border:1px solid #d0dce8;border-radius:10px;padding:18px;margin-bottom:20px;">
+      <strong style="font-size:.92rem;">Add New Medicine</strong>
+      <div class="form-row" style="margin-top:10px;">
+        <div>
+          <label>Medicine Name</label>
+          <input id="inv-name" type="text" placeholder="e.g. Metformin">
+        </div>
+        <div>
+          <label>Stock (units)</label>
+          <input id="inv-stock" type="number" min="0" placeholder="e.g. 100">
+        </div>
+        <div>
+          <label>Price per unit (₹)</label>
+          <input id="inv-price" type="number" min="0" placeholder="e.g. 25">
+        </div>
+      </div>
+      <div style="margin-top:12px;display:flex;align-items:center;gap:12px;">
+        <button class="btn btn-success" onclick="addMedicine()">+ Add Medicine</button>
+        <span class="msg" id="inv-msg"></span>
+      </div>
+    </div>
+
+    <div id="inv-loading" class="loading">Loading inventory...</div>
+
+    <table id="inv-table" style="display:none;">
+      <thead>
+        <tr><th>Medicine</th><th>Stock</th><th>Price (₹)</th><th>Status</th><th>Actions</th></tr>
+      </thead>
+      <tbody id="inv-body"></tbody>
+    </table>
+  </div>
+
+</div><!-- .content -->
+
+<!-- ── PRESCRIPTION DETAIL MODAL ───────────────────────────── -->
+<div id="rx-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;overflow-y:auto;">
+  <div style="background:#fff;max-width:680px;margin:40px auto;border-radius:16px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.25);">
+    <div style="background:linear-gradient(135deg,#1e3a5f,#2980b9);color:#fff;padding:18px 24px;display:flex;justify-content:space-between;align-items:center;">
+      <h3 id="modal-title" style="font-size:1.1rem;">Prescription Details</h3>
+      <button onclick="closeModal()" style="background:none;border:none;color:#fff;font-size:1.4rem;cursor:pointer;">✕</button>
+    </div>
+    <div style="padding:24px;" id="modal-body"></div>
+    <div style="padding:16px 24px;background:#f8fbff;border-top:1px solid #e0e8f0;display:flex;gap:10px;flex-wrap:wrap;" id="modal-actions"></div>
+  </div>
+</div>
+
+<script>
+const TOKEN_KEY = "medplusToken";
+const USER_KEY  = "medplusUser";
+
+let authToken   = localStorage.getItem(TOKEN_KEY);
+let currentUser = null;
+let allPrescriptions = [];
+let currentRxId = null;
+
+// ── Auth check ────────────────────────────────────────────────
+(async function init() {
+  if (!authToken) return redirectLogin();
+  try {
+    const me = await api("/api/me");
+    currentUser = me.user;
+    if (currentUser.role !== "pharmacist") return redirectLogin();
+    document.getElementById("pharm-welcome").textContent =
+      `${currentUser.fullName} · Pharmacist Portal`;
+    await Promise.all([loadPrescriptions(), loadInventory()]);
+  } catch {
+    redirectLogin();
+  }
+})();
+
+function redirectLogin() {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+  window.location.href = "/";
+}
+
+document.getElementById("logout-btn").addEventListener("click", () => {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+  window.location.href = "/";
+});
+
+// ── API helper ────────────────────────────────────────────────
+async function api(path, options = {}) {
+  const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
+  if (authToken) headers.Authorization = `Bearer ${authToken}`;
+  const res  = await fetch(path, { ...options, headers });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) { const err = new Error(data.error || "Request failed"); err.status = res.status; throw err; }
+  return data;
+}
+
+// ── Tab switching ─────────────────────────────────────────────
+function switchTab(name, btn) {
+  document.querySelectorAll(".tab-section").forEach((s) => s.classList.add("hidden"));
+  document.querySelectorAll(".tab-btn").forEach((b) => b.classList.remove("active"));
+  document.getElementById("tab-" + name).classList.remove("hidden");
+  btn.classList.add("active");
+}
+
+// ── Load & render prescriptions ───────────────────────────────
+async function loadPrescriptions() {
+  document.getElementById("rx-loading").style.display = "block";
+  document.getElementById("rx-table").style.display   = "none";
+  document.getElementById("rx-empty").style.display   = "none";
+
+  try {
+    const { prescriptions } = await api("/api/prescriptions");
+    allPrescriptions = prescriptions || [];
+    updateStats(allPrescriptions);
+    filterPrescriptions();
+  } catch (e) {
+    document.getElementById("rx-loading").textContent = "Failed to load prescriptions.";
+  }
+}
+
+function filterPrescriptions() {
+  const filter = document.getElementById("rx-filter").value;
+  const list   = filter === "all"
+    ? allPrescriptions
+    : allPrescriptions.filter((rx) => rx.status === filter);
+
+  document.getElementById("rx-loading").style.display = "none";
+
+  if (list.length === 0) {
+    document.getElementById("rx-table").style.display = "none";
+    document.getElementById("rx-empty").style.display = "block";
+    return;
+  }
+
+  document.getElementById("rx-table").style.display = "";
+  document.getElementById("rx-empty").style.display  = "none";
+
+  const tbody = document.getElementById("rx-body");
+  tbody.innerHTML = "";
+  list.forEach((rx) => {
+    const meds = parseMeds(rx.medicines);
+    const ai   = safeJson(rx.aiAnalysis);
+    const row  = document.createElement("tr");
+    row.innerHTML = `
+      <td><strong>${rx.patientName}</strong><br><span style="font-size:.78em;color:#888;">${rx.patientUsername}</span></td>
+      <td>${rx.doctorName}</td>
+      <td>${(rx.createdAt || "").slice(0, 10)}</td>
+      <td style="max-width:200px;font-size:.82em;">${meds.map((m) => m.name + (m.dosage ? " · " + m.dosage : "")).join("<br>")}</td>
+      <td><span class="badge badge-${rx.status}">${rx.status}</span>
+          ${ai ? `<br><span style="font-size:.72em;color:${ai.riskLevel === "HIGH" ? "#e74c3c" : ai.riskLevel === "MODERATE" ? "#e67e22" : "#27ae60"};font-weight:700;">⚡ ${ai.riskLevel}</span>` : ""}
+      </td>
+      <td>
+        <div class="actions">
+          <button class="btn btn-primary btn-sm" onclick="openModal(${rx.id})">View / Act</button>
+        </div>
+      </td>`;
+    tbody.appendChild(row);
+  });
+}
+
+function updateStats(prescriptions) {
+  const today = new Date().toISOString().slice(0, 10);
+  document.getElementById("stat-pending").textContent   = prescriptions.filter((r) => r.status === "pending").length;
+  document.getElementById("stat-flagged").textContent   = prescriptions.filter((r) => r.status === "flagged").length;
+  document.getElementById("stat-dispensed").textContent = prescriptions.filter((r) => r.status === "dispensed" && (r.createdAt || "").slice(0, 10) === today).length;
+}
+
+// ── Prescription modal ────────────────────────────────────────
+function openModal(rxId) {
+  currentRxId = rxId;
+  const rx  = allPrescriptions.find((r) => r.id === rxId);
+  if (!rx) return;
+
+  const meds = parseMeds(rx.medicines);
+  const ai   = safeJson(rx.aiAnalysis);
+
+  document.getElementById("modal-title").textContent = `Prescription #${rx.id} — ${rx.patientName}`;
+
+  document.getElementById("modal-body").innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.87rem;margin-bottom:16px;">
+      <div><b>Patient:</b> ${rx.patientName} <span style="color:#888;">(${rx.patientUsername})</span></div>
+      <div><b>Doctor:</b> ${rx.doctorName}</div>
+      <div><b>Date:</b> ${(rx.createdAt || "").slice(0, 16).replace("T", " ")}</div>
+      <div><b>Status:</b> <span class="badge badge-${rx.status}">${rx.status}</span></div>
+    </div>
+
+    <div style="margin-bottom:16px;">
+      <strong>💊 Medicines</strong>
+      <table style="margin-top:8px;font-size:.84rem;">
+        <thead><tr><th>Name</th><th>Dosage</th><th>Frequency</th><th>Duration</th></tr></thead>
+        <tbody>
+          ${meds.map((m) => `<tr><td>${m.name}</td><td>${m.dosage || "—"}</td><td>${m.frequency || "—"}</td><td>${m.duration || "—"}</td></tr>`).join("")}
+        </tbody>
+      </table>
+    </div>
+
+    <div id="ai-section" style="margin-bottom:16px;">
+      ${ai ? renderAiBox(ai) : `<button class="btn btn-primary btn-sm" onclick="runAiCheck(${rxId})">🤖 Run AI Drug Check</button> <span id="ai-check-msg" style="font-size:.82rem;color:#666;margin-left:8px;"></span>`}
+    </div>
+
+    ${rx.pharmacistNotes ? `<div style="margin-bottom:12px;font-size:.85rem;"><b>Pharmacist Notes:</b> ${rx.pharmacistNotes}</div>` : ""}
+
+    <div>
+      <label>Pharmacist Notes</label>
+      <textarea id="modal-notes" class="notes-area" placeholder="Add notes, alternatives, warnings...">${rx.pharmacistNotes || ""}</textarea>
+    </div>
+    <span class="msg" id="modal-msg" style="display:block;margin-top:6px;"></span>`;
+
+  // Actions
+  const actions = document.getElementById("modal-actions");
+  actions.innerHTML = "";
+
+  const statusBtns = [
+    { label: "✓ Verify",   status: "verified",  cls: "btn-primary" },
+    { label: "✅ Approve",  status: "approved",  cls: "btn-success" },
+    { label: "💊 Dispense", status: "dispensed", cls: "btn-primary" },
+    { label: "⚠ Flag",     status: "flagged",   cls: "btn-warning" },
+    { label: "✗ Reject",   status: "rejected",  cls: "btn-danger"  },
+  ];
+
+  statusBtns.forEach(({ label, status, cls }) => {
+    if (rx.status === status) return;
+    const btn = document.createElement("button");
+    btn.className = `btn ${cls} btn-sm`;
+    btn.textContent = label;
+    btn.onclick = () => updateRxStatus(rxId, status);
+    actions.appendChild(btn);
+  });
+
+  const saveBtn = document.createElement("button");
+  saveBtn.className = "btn btn-secondary btn-sm";
+  saveBtn.textContent = "💾 Save Notes";
+  saveBtn.onclick = () => saveNotes(rxId);
+  actions.appendChild(saveBtn);
+
+  document.getElementById("rx-modal").style.display = "block";
+}
+
+function closeModal() {
+  document.getElementById("rx-modal").style.display = "none";
+  currentRxId = null;
+}
+
+document.getElementById("rx-modal").addEventListener("click", function (e) {
+  if (e.target === this) closeModal();
+});
+
+function renderAiBox(ai) {
+  const colors = { HIGH: "#e74c3c", MODERATE: "#e67e22", SAFE: "#27ae60" };
+  const c = colors[ai.riskLevel] || "#27ae60";
+  return `
+    <div class="ai-box risk-${ai.riskLevel}">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <strong>🤖 AI Drug Interaction Analysis</strong>
+        <span style="background:${c};color:#fff;padding:2px 10px;border-radius:12px;font-size:.75rem;font-weight:700;">${ai.riskLevel}</span>
+      </div>
+      <div style="font-size:.83rem;margin-bottom:8px;"><b>Recommendation:</b> ${ai.recommendation}</div>
+      ${ai.warnings && ai.warnings.length > 0 ? `
+        <div style="font-size:.82rem;"><b>Warnings (${ai.warnings.length}):</b>
+          ${ai.warnings.map((w) => `
+            <div class="warning-item" style="margin-top:5px;padding:5px 8px;background:rgba(255,255,255,.6);border-radius:5px;">
+              <span class="risk-badge risk-${w.risk}">${w.risk}</span>
+              <span>${w.message} <span style="color:#888;">(${w.drugs.join(" + ")})</span></span>
+            </div>`).join("")}
+        </div>` : `<div style="font-size:.82rem;color:#27ae60;">✓ No drug interaction warnings.</div>`}
+      <div style="font-size:.75rem;color:#888;margin-top:6px;">Checked: ${(ai.checkedAt || "").slice(0, 16).replace("T", " ")}</div>
+    </div>`;
+}
+
+async function runAiCheck(rxId) {
+  const msgEl = document.getElementById("ai-check-msg");
+  if (msgEl) msgEl.textContent = "Running analysis...";
+  try {
+    const { analysis } = await api(`/api/prescriptions/${rxId}/ai-check`, { method: "POST" });
+    document.getElementById("ai-section").innerHTML = renderAiBox(analysis);
+    // Refresh local data
+    const idx = allPrescriptions.findIndex((r) => r.id === rxId);
+    if (idx >= 0) allPrescriptions[idx].aiAnalysis = JSON.stringify(analysis);
+  } catch (e) {
+    if (msgEl) msgEl.textContent = e.message || "AI check failed";
+  }
+}
+
+async function updateRxStatus(rxId, status) {
+  const notes = document.getElementById("modal-notes")?.value.trim() || "";
+  try {
+    await api(`/api/prescriptions/${rxId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ status, pharmacist_notes: notes }),
+    });
+    const idx = allPrescriptions.findIndex((r) => r.id === rxId);
+    if (idx >= 0) { allPrescriptions[idx].status = status; allPrescriptions[idx].pharmacist_notes = notes; }
+    closeModal();
+    filterPrescriptions();
+    updateStats(allPrescriptions);
+  } catch (e) {
+    const msg = document.getElementById("modal-msg");
+    if (msg) { msg.textContent = e.message || "Update failed"; msg.className = "msg error"; }
+  }
+}
+
+async function saveNotes(rxId) {
+  const notes = document.getElementById("modal-notes")?.value.trim() || "";
+  try {
+    await api(`/api/prescriptions/${rxId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ pharmacist_notes: notes }),
+    });
+    const msg = document.getElementById("modal-msg");
+    if (msg) { msg.textContent = "Notes saved."; msg.className = "msg success"; }
+    const idx = allPrescriptions.findIndex((r) => r.id === rxId);
+    if (idx >= 0) allPrescriptions[idx].pharmacist_notes = notes;
+  } catch (e) {
+    const msg = document.getElementById("modal-msg");
+    if (msg) { msg.textContent = e.message || "Save failed"; msg.className = "msg error"; }
+  }
+}
+
+// ── Inventory ─────────────────────────────────────────────────
+let inventoryData = [];
+
+async function loadInventory() {
+  document.getElementById("inv-loading").style.display = "block";
+  document.getElementById("inv-table").style.display   = "none";
+
+  try {
+    const { inventory } = await api("/api/inventory");
+    inventoryData = inventory || [];
+    document.getElementById("stat-inventory").textContent = inventoryData.length;
+    renderInventory();
+  } catch {
+    document.getElementById("inv-loading").textContent = "Failed to load inventory.";
+  }
+}
+
+function renderInventory() {
+  document.getElementById("inv-loading").style.display = "none";
+  document.getElementById("inv-table").style.display   = "";
+
+  const tbody = document.getElementById("inv-body");
+  tbody.innerHTML = "";
+
+  inventoryData.forEach((item) => {
+    const low  = item.stock < 10;
+    const out  = item.stock === 0;
+    const row  = document.createElement("tr");
+    row.innerHTML = `
+      <td><strong>${item.medicine}</strong></td>
+      <td>
+        <div class="inv-edit">
+          <input type="number" id="stock-${item.id}" value="${item.stock}" min="0" onchange="pendingEdit('${item.id}')">
+        </div>
+      </td>
+      <td>
+        <div class="inv-edit">
+          ₹<input type="number" id="price-${item.id}" value="${item.price}" min="0" onchange="pendingEdit('${item.id}')">
+        </div>
+      </td>
+      <td>
+        ${out  ? '<span class="badge badge-flagged">Out of Stock</span>' :
+          low  ? '<span class="badge badge-pending">Low Stock</span>' :
+                 '<span class="badge badge-approved">In Stock</span>'}
+      </td>
+      <td>
+        <div class="actions">
+          <button class="btn btn-primary btn-sm" id="save-${item.id}" style="display:none;" onclick="saveInventory(${item.id})">Save</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteMedicine(${item.id},'${item.medicine}')">Delete</button>
+        </div>
+      </td>`;
+    tbody.appendChild(row);
+  });
+}
+
+function pendingEdit(id) {
+  const btn = document.getElementById("save-" + id);
+  if (btn) btn.style.display = "inline-block";
+}
+
+async function saveInventory(id) {
+  const stock = Number(document.getElementById("stock-" + id).value);
+  const price = Number(document.getElementById("price-" + id).value);
+  try {
+    await api(`/api/inventory/${id}`, { method: "PATCH", body: JSON.stringify({ stock, price }) });
+    document.getElementById("save-" + id).style.display = "none";
+    const idx = inventoryData.findIndex((i) => i.id === id);
+    if (idx >= 0) { inventoryData[idx].stock = stock; inventoryData[idx].price = price; }
+    renderInventory();
+  } catch (e) {
+    showInvMsg(e.message || "Save failed", true);
+  }
+}
+
+async function deleteMedicine(id, name) {
+  if (!confirm(`Delete "${name}" from inventory?`)) return;
+  try {
+    await api(`/api/inventory/${id}`, { method: "DELETE" });
+    inventoryData = inventoryData.filter((i) => i.id !== id);
+    document.getElementById("stat-inventory").textContent = inventoryData.length;
+    renderInventory();
+    showInvMsg(`${name} removed.`);
+  } catch (e) {
+    showInvMsg(e.message || "Delete failed", true);
+  }
+}
+
+async function addMedicine() {
+  const name  = document.getElementById("inv-name").value.trim();
+  const stock = Number(document.getElementById("inv-stock").value);
+  const price = Number(document.getElementById("inv-price").value);
+
+  if (!name || isNaN(stock) || isNaN(price)) {
+    showInvMsg("Fill all fields", true); return;
+  }
+
+  try {
+    const { id } = await api("/api/inventory", {
+      method: "POST",
+      body: JSON.stringify({ medicine: name, stock, price }),
+    });
+    inventoryData.push({ id, medicine: name, stock, price });
+    document.getElementById("stat-inventory").textContent = inventoryData.length;
+    document.getElementById("inv-name").value  = "";
+    document.getElementById("inv-stock").value = "";
+    document.getElementById("inv-price").value = "";
+    renderInventory();
+    showInvMsg(`${name} added to inventory.`);
+  } catch (e) {
+    showInvMsg(e.message || "Failed to add", true);
+  }
+}
+
+function showInvMsg(text, isError = false) {
+  const el = document.getElementById("inv-msg");
+  el.textContent  = text;
+  el.className    = "msg " + (isError ? "error" : "success");
+  setTimeout(() => { el.textContent = ""; }, 3000);
+}
+
+// ── Utilities ─────────────────────────────────────────────────
+function parseMeds(raw) {
+  try {
+    const parsed = JSON.parse(raw || "[]");
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((m) => typeof m === "string"
+      ? { name: m, dosage: "", frequency: "", duration: "" }
+      : { name: m.name || "", dosage: m.dosage || "", frequency: m.frequency || "", duration: m.duration || "" });
+  } catch {
+    return [{ name: raw || "", dosage: "", frequency: "", duration: "" }];
+  }
+}
+
+function safeJson(str) {
+  try { return str ? JSON.parse(str) : null; } catch { return null; }
+}
+</script>
+</body>
+</html>

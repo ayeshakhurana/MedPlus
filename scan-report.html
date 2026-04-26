@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MedPlus — Scan Report Editor</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', sans-serif; background: #eef2f8; color: #1e3a5f; min-height: 100vh; }
+
+/* ── Top bar ── */
+.topbar {
+  background: linear-gradient(135deg, #1a2f70, #2e7df7);
+  color: #fff; padding: 0 28px;
+  height: 56px; display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(0,0,0,.25);
+}
+.topbar .left  { display: flex; align-items: center; gap: 14px; }
+.topbar .right { display: flex; align-items: center; gap: 14px; }
+.back-btn {
+  background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.4);
+  color: #fff; padding: 6px 14px; border-radius: 8px; cursor: pointer;
+  font-size: .85rem; font-weight: 600; text-decoration: none;
+  transition: background .2s;
+}
+.back-btn:hover { background: rgba(255,255,255,.32); }
+.topbar-title { font-size: 1rem; font-weight: 700; }
+.doctor-badge {
+  background: rgba(255,255,255,.15); border-radius: 20px;
+  padding: 4px 12px; font-size: .82rem;
+}
+.logout-link {
+  background: none; border: none; color: rgba(255,255,255,.7);
+  cursor: pointer; font-size: .82rem; text-decoration: underline;
+}
+.logout-link:hover { color: #fff; }
+
+/* ── Status strip ── */
+.status-strip {
+  padding: 10px 28px; font-size: .85rem;
+  display: flex; align-items: center; gap: 12px;
+  background: #fff; border-bottom: 1px solid #d0dce8;
+}
+.status-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 14px; border-radius: 20px; font-weight: 700; font-size: .82rem;
+}
+.status-draft    { background: #fff3cd; color: #856404; }
+.status-approved { background: #d4edda; color: #155724; }
+
+/* ── Main grid ── */
+.report-grid {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 0;
+  max-width: 1280px;
+  margin: 24px auto;
+  padding: 0 24px 80px;
+}
+
+/* ── Left panel ── */
+.left-panel {
+  background: #fff; border-radius: 14px 0 0 14px;
+  border: 1px solid #d0dce8; overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.scan-image-box {
+  background: #0a0a0f; min-height: 260px;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden; position: relative;
+}
+.scan-image-box img  { max-width: 100%; max-height: 360px; object-fit: contain; }
+.scan-image-box embed{ width: 100%; height: 320px; }
+.no-image-placeholder {
+  color: #555; text-align: center; padding: 32px 20px;
+}
+.no-image-placeholder .icon { font-size: 3rem; margin-bottom: 8px; }
+.no-image-placeholder p { font-size: .82rem; line-height: 1.5; }
+
+.scan-meta { padding: 18px 20px; border-top: 1px solid #d0dce8; }
+.scan-meta .row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: .84rem; }
+.scan-meta .label { color: #888; font-weight: 600; }
+.scan-meta .value { font-weight: 700; text-align: right; max-width: 160px; }
+
+.ai-summary { padding: 14px 20px; background: #f4f8ff; border-top: 1px solid #d0dce8; }
+.ai-summary .ai-label { font-size: .78rem; font-weight: 700; color: #2980b9; text-transform: uppercase;
+  letter-spacing: .06em; margin-bottom: 10px; }
+.conf-bar-wrap { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.conf-bar { flex: 1; height: 9px; background: #d0dce8; border-radius: 5px; overflow: hidden; }
+.conf-bar-fill { height: 100%; border-radius: 5px; background: linear-gradient(90deg, #2980b9, #27ae60); transition: width .6s ease; }
+.conf-label { font-size: .8rem; font-weight: 700; color: #1e3a5f; width: 38px; text-align: right; }
+.anomaly-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 12px; border-radius: 8px; font-size: .82rem; font-weight: 700;
+}
+.anomaly-yes { background: #fde8e8; color: #c0392b; }
+.anomaly-no  { background: #e8f8f0; color: #1e8449; }
+
+/* ── Right panel ── */
+.right-panel {
+  background: #fff; border-radius: 0 14px 14px 0;
+  border: 1px solid #d0dce8; border-left: none;
+  padding: 28px 30px;
+  overflow-y: auto;
+}
+
+.section { margin-bottom: 24px; }
+.section-head {
+  font-size: .82rem; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .07em; color: #2980b9; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 8px;
+}
+.section-head::after { content: ""; flex: 1; height: 1px; background: #d8e8f5; }
+
+.ai-badge {
+  display: inline-block; background: #e8f4ff; color: #1a5276;
+  padding: 2px 9px; border-radius: 12px; font-size: .72rem; font-weight: 700;
+  margin-left: 6px; vertical-align: middle;
+}
+
+textarea {
+  width: 100%; padding: 12px 14px; border: 1.5px solid #c8d8e8;
+  border-radius: 10px; font-family: 'Segoe UI', sans-serif;
+  font-size: .88rem; line-height: 1.6; resize: vertical; outline: none;
+  transition: border .2s, box-shadow .2s; color: #1e3a5f;
+}
+textarea:focus { border-color: #2980b9; box-shadow: 0 0 0 3px rgba(41,128,185,.12); }
+textarea.edited { border-color: #e67e22; background: #fffdf5; }
+
+.anomaly-toggle { display: flex; gap: 12px; margin-top: 6px; }
+.anomaly-opt {
+  flex: 1; padding: 10px 14px; border: 2px solid #d0dce8; border-radius: 10px;
+  display: flex; align-items: center; gap: 8px; cursor: pointer; transition: .2s;
+  font-size: .87rem; font-weight: 600; user-select: none;
+}
+.anomaly-opt input[type="radio"] { display: none; }
+.anomaly-opt.selected-yes { border-color: #e74c3c; background: #fdf0f0; color: #c0392b; }
+.anomaly-opt.selected-no  { border-color: #27ae60; background: #f0fdf5; color: #1e8449; }
+
+/* ── Action bar ── */
+.action-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: #fff; border-top: 1px solid #d0dce8;
+  padding: 12px 28px; display: flex; align-items: center; gap: 14px;
+  box-shadow: 0 -4px 20px rgba(0,0,0,.08); z-index: 50;
+}
+.btn-draft {
+  padding: 10px 24px; background: #ecf0f1; color: #2c3e50; border: none;
+  border-radius: 10px; font-size: .9rem; font-weight: 700; cursor: pointer;
+  transition: background .2s;
+}
+.btn-draft:hover { background: #d5dbdb; }
+.btn-approve {
+  padding: 10px 28px; background: linear-gradient(135deg, #27ae60, #1e8449);
+  color: #fff; border: none; border-radius: 10px; font-size: .92rem;
+  font-weight: 700; cursor: pointer; transition: .2s; box-shadow: 0 3px 14px rgba(39,174,96,.4);
+}
+.btn-approve:hover { transform: translateY(-1px); box-shadow: 0 5px 18px rgba(39,174,96,.5); }
+.btn-approve:disabled, .btn-draft:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+.action-msg { font-size: .87rem; font-weight: 600; }
+.action-msg.success { color: #27ae60; }
+.action-msg.error   { color: #e74c3c; }
+.action-spacer { flex: 1; }
+
+/* ── Approved overlay ── */
+#approved-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6);
+  z-index: 500; align-items: center; justify-content: center;
+}
+#approved-overlay.show { display: flex; }
+.approved-card {
+  background: #fff; border-radius: 20px; padding: 48px 52px; text-align: center;
+  box-shadow: 0 16px 60px rgba(0,0,0,.3); max-width: 460px; width: 90%;
+  animation: popIn .35s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes popIn { from { transform: scale(.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.approved-card .icon { font-size: 4rem; line-height: 1; margin-bottom: 14px; }
+.approved-card h2 { font-size: 1.5rem; color: #1e8449; margin-bottom: 8px; }
+.approved-card p  { color: #555; font-size: .92rem; margin-bottom: 22px; line-height: 1.6; }
+.approved-card .btn-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.btn-go {
+  padding: 10px 22px; border-radius: 10px; border: none; cursor: pointer;
+  font-size: .9rem; font-weight: 700; transition: .2s;
+}
+.btn-go.primary { background: #2980b9; color: #fff; }
+.btn-go.primary:hover { background: #1c6ea4; }
+.btn-go.secondary { background: #ecf0f1; color: #2c3e50; }
+.btn-go.secondary:hover { background: #d5dbdb; }
+
+/* ── Loading ── */
+.loading-wrap { display: flex; flex-direction: column; align-items: center;
+  justify-content: center; min-height: 60vh; gap: 16px; }
+.spinner { width: 44px; height: 44px; border: 4px solid #d0dce8;
+  border-top-color: #2980b9; border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Diff highlight ── */
+.orig-text {
+  font-size: .78rem; color: #999; background: #f8f9fa;
+  border-radius: 6px; padding: 6px 10px; margin-top: 5px; line-height: 1.5;
+  font-style: italic; display: none;
+}
+.show-orig-btn {
+  background: none; border: none; color: #2980b9; font-size: .77rem;
+  cursor: pointer; text-decoration: underline; padding: 0; margin-top: 4px;
+}
+
+@media (max-width: 860px) {
+  .report-grid { grid-template-columns: 1fr; padding: 0 12px 80px; }
+  .left-panel  { border-radius: 14px 14px 0 0; }
+  .right-panel { border-radius: 0 0 14px 14px; border-left: 1px solid #d0dce8; border-top: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Top bar ── -->
+<div class="topbar">
+  <div class="left">
+    <a href="/" class="back-btn">← Dashboard</a>
+    <span class="topbar-title">🔬 Scan Report Editor</span>
+  </div>
+  <div class="right">
+    <span class="doctor-badge" id="doctor-name-badge">Loading…</span>
+    <button class="logout-link" id="logout-btn">Logout</button>
+  </div>
+</div>
+
+<!-- ── Status strip ── -->
+<div class="status-strip" id="status-strip" style="display:none;">
+  <span>Report&nbsp;<strong id="report-id-label"></strong></span>
+  <span>·</span>
+  <span>Patient:&nbsp;<strong id="patient-label"></strong></span>
+  <span>·</span>
+  <span id="status-badge-wrap"></span>
+</div>
+
+<!-- ── Loading state ── -->
+<div class="loading-wrap" id="loading-wrap">
+  <div class="spinner"></div>
+  <p style="color:#888;font-size:.9rem;">Loading scan report…</p>
+</div>
+
+<!-- ── Report grid ── -->
+<div class="report-grid" id="report-grid" style="display:none;">
+
+  <!-- LEFT: image + metadata -->
+  <div class="left-panel">
+    <div class="scan-image-box" id="image-box">
+      <div class="no-image-placeholder">
+        <div class="icon" id="scan-type-icon">🩻</div>
+        <p>No image uploaded<br><span style="color:#777;font-size:.75rem;">Scan type: <span id="scan-type-placeholder">—</span></span></p>
+      </div>
+    </div>
+
+    <div class="scan-meta">
+      <div class="row"><span class="label">Patient</span><span class="value" id="meta-patient">—</span></div>
+      <div class="row"><span class="label">Scan Type</span><span class="value" id="meta-type">—</span></div>
+      <div class="row"><span class="label">Date &amp; Time</span><span class="value" id="meta-date">—</span></div>
+      <div class="row"><span class="label">Requesting Doctor</span><span class="value" id="meta-doctor">—</span></div>
+    </div>
+
+    <div class="ai-summary">
+      <div class="ai-label">🤖 AI Model Output</div>
+      <div class="conf-bar-wrap">
+        <div class="conf-bar"><div class="conf-bar-fill" id="conf-fill" style="width:0%"></div></div>
+        <span class="conf-label" id="conf-pct">—</span>
+      </div>
+      <div id="anomaly-summary"></div>
+      <div style="margin-top:8px;font-size:.74rem;color:#888;" id="ai-model-label"></div>
+    </div>
+  </div>
+
+  <!-- RIGHT: editable report -->
+  <div class="right-panel">
+
+    <!-- Patient info section -->
+    <div class="section">
+      <div class="section-head">Patient &amp; Scan Information</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:.86rem;">
+        <div><span style="color:#888;font-weight:600;">Full Name</span><br><strong id="info-patient">—</strong></div>
+        <div><span style="color:#888;font-weight:600;">Scan Type</span><br><strong id="info-type">—</strong></div>
+        <div><span style="color:#888;font-weight:600;">Report Date</span><br><strong id="info-date">—</strong></div>
+        <div><span style="color:#888;font-weight:600;">Attending Doctor</span><br><strong id="info-doctor">—</strong></div>
+      </div>
+    </div>
+
+    <!-- Findings -->
+    <div class="section">
+      <div class="section-head">
+        Findings <span class="ai-badge">AI Pre-filled</span>
+      </div>
+      <textarea id="findings-input" rows="5"
+        placeholder="Describe the key findings from the scan…"
+        oninput="markEdited(this,'findings-orig')"></textarea>
+      <button class="show-orig-btn" onclick="toggleOrig('findings-orig')">Show original AI text</button>
+      <div class="orig-text" id="findings-orig"></div>
+    </div>
+
+    <!-- Recommendation -->
+    <div class="section">
+      <div class="section-head">
+        Recommendation <span class="ai-badge">AI Pre-filled</span>
+      </div>
+      <textarea id="recommendation-input" rows="3"
+        placeholder="Clinical recommendation, follow-up plan…"
+        oninput="markEdited(this,'recommendation-orig')"></textarea>
+      <button class="show-orig-btn" onclick="toggleOrig('recommendation-orig')">Show original AI text</button>
+      <div class="orig-text" id="recommendation-orig"></div>
+    </div>
+
+    <!-- Anomaly assessment -->
+    <div class="section">
+      <div class="section-head">Anomaly Assessment</div>
+      <div class="anomaly-toggle" id="anomaly-toggle">
+        <label class="anomaly-opt" id="opt-yes" onclick="selectAnomaly(true)">
+          <input type="radio" name="anomaly" value="true">
+          ⚠️ Anomaly Detected
+        </label>
+        <label class="anomaly-opt" id="opt-no" onclick="selectAnomaly(false)">
+          <input type="radio" name="anomaly" value="false">
+          ✓ No Anomaly Found
+        </label>
+      </div>
+    </div>
+
+    <!-- Doctor's additional notes -->
+    <div class="section">
+      <div class="section-head">Doctor's Additional Notes</div>
+      <textarea id="notes-input" rows="3"
+        placeholder="Clinical context, differential diagnosis, patient history, next steps…"></textarea>
+    </div>
+
+    <!-- Preview of what patient sees -->
+    <div class="section" id="patient-preview-section" style="display:none;">
+      <div class="section-head" style="color:#27ae60;">
+        Patient-Visible Report Preview
+      </div>
+      <div id="patient-preview"
+        style="background:#f0fff4;border:1px solid #a9dfbf;border-radius:10px;padding:16px;font-size:.86rem;line-height:1.65;color:#1e3a5f;">
+      </div>
+    </div>
+
+  </div><!-- .right-panel -->
+</div><!-- .report-grid -->
+
+<!-- ── Action bar ── -->
+<div class="action-bar" id="action-bar" style="display:none;">
+  <button class="btn-draft" id="btn-draft" onclick="saveDraft()">💾 Save Draft</button>
+  <button class="btn-approve" id="btn-approve" onclick="approveReport()">✅ Approve &amp; Send to Patient</button>
+  <button class="show-orig-btn" style="color:#888;font-size:.82rem;"
+    onclick="document.getElementById('patient-preview-section').style.display=
+      document.getElementById('patient-preview-section').style.display==='none'?'block':'none';
+      updatePreview();">
+    👁 Preview patient view
+  </button>
+  <span class="action-spacer"></span>
+  <span class="action-msg" id="action-msg"></span>
+</div>
+
+<!-- ── Approved overlay ── -->
+<div id="approved-overlay">
+  <div class="approved-card">
+    <div class="icon">✅</div>
+    <h2>Report Approved!</h2>
+    <p>Your report is now visible on the patient's dashboard.<br>
+       The patient can see your findings and recommendation.</p>
+    <div class="btn-row">
+      <button class="btn-go primary" onclick="window.location.href='/'">← Back to Dashboard</button>
+      <button class="btn-go secondary" onclick="document.getElementById('approved-overlay').classList.remove('show')">
+        Continue Editing
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+const TOKEN_KEY = "medplusToken";
+const USER_KEY  = "medplusUser";
+
+let authToken   = localStorage.getItem(TOKEN_KEY);
+let currentUser = null;
+let scanData    = null;        // raw data from server
+let anomalySelected = null;   // true | false
+
+// ── Boot ─────────────────────────────────────────────────────────────────────
+(async () => {
+  if (!authToken) return redirect();
+
+  try {
+    const me = await apiFetch("/api/me");
+    currentUser = me.user;
+    if (currentUser.role !== "doctor") return redirect();
+    document.getElementById("doctor-name-badge").textContent = currentUser.fullName;
+  } catch { return redirect(); }
+
+  const params = new URLSearchParams(window.location.search);
+  const scanId = Number(params.get("id"));
+  if (!scanId) return showError("No scan ID provided.");
+
+  try {
+    const { scan } = await apiFetch(`/api/scans/${scanId}`);
+    scanData = scan;
+    initUI(scan);
+  } catch (e) {
+    showError(e.message || "Failed to load scan report.");
+  }
+})();
+
+// ── Auth helpers ──────────────────────────────────────────────────────────────
+function redirect() {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+  window.location.href = "/";
+}
+
+document.getElementById("logout-btn").addEventListener("click", () => {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+  window.location.href = "/";
+});
+
+async function apiFetch(path, options = {}) {
+  const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
+  if (authToken) headers.Authorization = `Bearer ${authToken}`;
+  const res  = await fetch(path, { ...options, headers });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) { const err = new Error(data.error || "Request failed"); err.status = res.status; throw err; }
+  return data;
+}
+
+// ── Initialise UI from scan data ──────────────────────────────────────────────
+function initUI(scan) {
+  document.getElementById("loading-wrap").style.display = "none";
+  document.getElementById("report-grid").style.display  = "";
+  document.getElementById("action-bar").style.display   = "";
+  document.getElementById("status-strip").style.display = "";
+
+  // Status strip
+  document.getElementById("report-id-label").textContent   = `#${scan.id}`;
+  document.getElementById("patient-label").textContent     = scan.patientName;
+  updateStatusBadge(scan.approved);
+
+  // Left panel — image
+  const imageBox = document.getElementById("image-box");
+  if (scan.imageData) {
+    if (scan.imageData.startsWith("data:application/pdf")) {
+      imageBox.innerHTML = `<embed src="${scan.imageData}" type="application/pdf" style="width:100%;height:320px;">`;
+    } else {
+      imageBox.innerHTML = `<img src="${scan.imageData}" alt="${scan.scanType} scan" style="max-width:100%;max-height:360px;object-fit:contain;">`;
+    }
+  } else {
+    document.getElementById("scan-type-icon").textContent       = scanTypeIcon(scan.scanType);
+    document.getElementById("scan-type-placeholder").textContent = scan.scanType;
+  }
+
+  // Left panel — meta
+  document.getElementById("meta-patient").textContent = scan.patientName;
+  document.getElementById("meta-type").textContent    = scan.scanType;
+  document.getElementById("meta-date").textContent    = (scan.createdAt || "").slice(0, 16).replace("T", " ");
+  document.getElementById("meta-doctor").textContent  = scan.doctorName;
+
+  // Left panel — AI summary
+  const ai = safeJson(scan.aiResult);
+  if (ai) {
+    const pct = Math.round((ai.confidenceScore || 0) * 100);
+    document.getElementById("conf-fill").style.width = pct + "%";
+    document.getElementById("conf-pct").textContent  = pct + "%";
+    document.getElementById("anomaly-summary").innerHTML = ai.anomalyDetected
+      ? `<span class="anomaly-badge anomaly-yes">⚠ Anomaly Detected</span>`
+      : `<span class="anomaly-badge anomaly-no">✓ No Anomaly Found</span>`;
+    document.getElementById("ai-model-label").textContent = ai.model || "";
+  }
+
+  // Right panel — info
+  document.getElementById("info-patient").textContent = scan.patientName;
+  document.getElementById("info-type").textContent    = scan.scanType;
+  document.getElementById("info-date").textContent    = (scan.createdAt || "").slice(0, 16).replace("T", " ");
+  document.getElementById("info-doctor").textContent  = scan.doctorName;
+
+  // Right panel — editable fields
+  // Prefer final_report (previously saved draft) over raw AI result
+  const fr = safeJson(scan.finalReport);
+  const aiFindings        = ai ? (ai.findings || "")        : "";
+  const aiRecommendation  = ai ? (ai.recommendation || "") : "";
+  const aiAnomaly         = ai ? ai.anomalyDetected         : null;
+
+  const findings       = fr ? (fr.findings || aiFindings)            : aiFindings;
+  const recommendation = fr ? (fr.recommendation || aiRecommendation) : aiRecommendation;
+  const anomaly        = fr ? fr.anomalyDetected                      : aiAnomaly;
+  const notes          = fr ? (fr.additionalNotes || scan.doctorNotes || "") : (scan.doctorNotes || "");
+
+  document.getElementById("findings-input").value       = findings;
+  document.getElementById("recommendation-input").value = recommendation;
+  document.getElementById("notes-input").value          = notes;
+
+  // Store AI originals for "show original" toggle
+  document.getElementById("findings-orig").textContent       = aiFindings;
+  document.getElementById("recommendation-orig").textContent = aiRecommendation;
+
+  // Anomaly toggle
+  selectAnomaly(anomaly);
+}
+
+// ── Anomaly toggle ────────────────────────────────────────────────────────────
+function selectAnomaly(val) {
+  anomalySelected = val;
+  const optYes = document.getElementById("opt-yes");
+  const optNo  = document.getElementById("opt-no");
+  optYes.classList.toggle("selected-yes", val === true);
+  optNo.classList.toggle("selected-no",   val === false);
+}
+
+// ── Edited indicator ──────────────────────────────────────────────────────────
+function markEdited(textarea, origId) {
+  const orig  = document.getElementById(origId);
+  const isDiff = textarea.value.trim() !== orig.textContent.trim();
+  textarea.classList.toggle("edited", isDiff);
+}
+
+function toggleOrig(id) {
+  const el = document.getElementById(id);
+  el.style.display = el.style.display === "none" || !el.style.display ? "block" : "none";
+}
+
+// ── Status badge ──────────────────────────────────────────────────────────────
+function updateStatusBadge(approved) {
+  document.getElementById("status-badge-wrap").innerHTML = approved
+    ? `<span class="status-badge status-approved">✅ Approved &amp; Visible to Patient</span>`
+    : `<span class="status-badge status-draft">📝 Draft — Not Yet Sent to Patient</span>`;
+}
+
+// ── Collect form values ───────────────────────────────────────────────────────
+function collectFinalReport(isApproved) {
+  return {
+    findings:        document.getElementById("findings-input").value.trim(),
+    recommendation:  document.getElementById("recommendation-input").value.trim(),
+    anomalyDetected: anomalySelected,
+    additionalNotes: document.getElementById("notes-input").value.trim(),
+    ...(isApproved ? { approvedAt: new Date().toISOString() } : {}),
+  };
+}
+
+// ── Patient preview ───────────────────────────────────────────────────────────
+function updatePreview() {
+  const fr     = collectFinalReport(false);
+  const color  = fr.anomalyDetected ? "#e74c3c" : "#27ae60";
+  const label  = fr.anomalyDetected
+    ? "⚠ Anomaly Detected"
+    : "✓ No Anomaly Found";
+  document.getElementById("patient-preview").innerHTML = `
+    <div style="margin-bottom:10px;font-weight:700;font-size:.95rem;">
+      ${scanData.scanType} Report &nbsp;
+      <span style="color:${color};font-weight:700;">${label}</span>
+    </div>
+    <div style="margin-bottom:8px;"><b>Findings:</b><br>${(fr.findings || "—").replace(/\n/g,"<br>")}</div>
+    <div style="margin-bottom:8px;"><b>Recommendation:</b><br>${(fr.recommendation || "—").replace(/\n/g,"<br>")}</div>
+    ${fr.additionalNotes ? `<div><b>Doctor's Notes:</b><br>${fr.additionalNotes.replace(/\n/g,"<br>")}</div>` : ""}
+    <div style="margin-top:10px;font-size:.76rem;color:#888;">
+      Signed by ${scanData.doctorName}
+    </div>`;
+}
+
+// ── Save draft ────────────────────────────────────────────────────────────────
+async function saveDraft() {
+  setBusy(true);
+  const finalReport = collectFinalReport(false);
+  try {
+    await apiFetch(`/api/scans/${scanData.id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ finalReport, doctorNotes: finalReport.additionalNotes }),
+    });
+    showMsg("Draft saved.", "success");
+    scanData.finalReport = JSON.stringify(finalReport);
+    updateStatusBadge(false);
+  } catch (e) {
+    showMsg(e.message || "Save failed.", "error");
+  }
+  setBusy(false);
+}
+
+// ── Approve report ────────────────────────────────────────────────────────────
+async function approveReport() {
+  const findings = document.getElementById("findings-input").value.trim();
+  if (!findings) {
+    showMsg("Findings cannot be empty before approving.", "error");
+    return;
+  }
+  if (anomalySelected === null) {
+    showMsg("Please select Anomaly Assessment before approving.", "error");
+    return;
+  }
+
+  setBusy(true);
+  const finalReport = collectFinalReport(true);
+  try {
+    await apiFetch(`/api/scans/${scanData.id}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        finalReport,
+        doctorNotes: finalReport.additionalNotes,
+        approved: true,
+      }),
+    });
+    scanData.approved     = 1;
+    scanData.finalReport  = JSON.stringify(finalReport);
+    updateStatusBadge(true);
+    document.getElementById("approved-overlay").classList.add("show");
+  } catch (e) {
+    showMsg(e.message || "Approval failed.", "error");
+  }
+  setBusy(false);
+}
+
+// ── UI helpers ────────────────────────────────────────────────────────────────
+function setBusy(busy) {
+  document.getElementById("btn-draft").disabled   = busy;
+  document.getElementById("btn-approve").disabled = busy;
+}
+
+function showMsg(text, type) {
+  const el = document.getElementById("action-msg");
+  el.textContent = text;
+  el.className   = "action-msg " + type;
+  setTimeout(() => { el.textContent = ""; el.className = "action-msg"; }, 4000);
+}
+
+function showError(msg) {
+  document.getElementById("loading-wrap").innerHTML =
+    `<div style="color:#e74c3c;font-size:.95rem;text-align:center;padding:40px;">
+       ⚠ ${msg}<br><a href="/" style="color:#2980b9;margin-top:10px;display:inline-block;">← Back to Dashboard</a>
+     </div>`;
+}
+
+function safeJson(str) {
+  try { return str ? JSON.parse(str) : null; } catch { return null; }
+}
+
+function scanTypeIcon(type) {
+  const icons = { MRI: "🧠", CT: "🧬", "X-ray": "🦴", Ultrasound: "🔊", ECG: "❤️", "Blood Test": "🩸" };
+  return icons[type] || "🩻";
+}
+</script>
+</body>
+</html>

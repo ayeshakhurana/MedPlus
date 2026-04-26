@@ -2,16 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Hospital Management System</title>
-
-<style>
-
-/* ======================
-   GLOBAL STYLES
-====================== */
-
-
-</style>
+<title>MedPlus — Hospital Management System</title>
 <link rel="stylesheet" href="style.css">
 </head>
 
@@ -20,60 +11,58 @@
 <header>
   <div>
     <h1>🏥 MedPlus : Hospital Management System</h1>
-    <p>Doctor & Patient Portal</p>
+    <p>Doctor, Patient &amp; Pharmacist Portal</p>
   </div>
-
-  <button id="map" onclick="window.location.href='hospital.html'">
-    📍 View Hospital
-  </button>
+  <button id="map" onclick="window.location.href='hospital.html'">📍 View Hospital</button>
 </header>
 
 <main>
 
+<!-- ── LOGIN ──────────────────────────────────────────────── -->
 <div id="login-section">
 
-<h2>Welcome Back 👋</h2>
-<p class="sub">Sign in to your portal</p>
+  <h2>Welcome Back 👋</h2>
+  <p class="sub">Sign in to your portal</p>
 
-<div class="tabs">
-<button class="tab active" onclick="setRole('doctor',this)">🩺 Doctor</button>
-<button class="tab" onclick="setRole('patient',this)">🧑‍⚕️ Patient</button>
+  <div class="tabs">
+    <button class="tab active" onclick="setRole('doctor',this)">🩺 Doctor</button>
+    <button class="tab" onclick="setRole('patient',this)">🧑‍⚕️ Patient</button>
+    <button class="tab" onclick="setRole('pharmacist',this)">💊 Pharmacist</button>
+  </div>
+
+  <form id="login-form">
+    <select id="role" style="display:none">
+      <option value="doctor">Doctor</option>
+      <option value="patient">Patient</option>
+      <option value="pharmacist">Pharmacist</option>
+    </select>
+
+    <div class="auth-mode">
+      <button type="button" class="auth-tab auth-tab-active" data-mode="login">Login</button>
+      <button type="button" class="auth-tab" data-mode="signup">Sign up</button>
+    </div>
+    <input type="hidden" id="auth-mode" value="login">
+
+    <label>Username</label>
+    <input id="username" type="text" placeholder="Enter username" required>
+
+    <label>Password</label>
+    <input id="password" type="password" placeholder="••••••••" required>
+
+    <button type="submit" class="btn" style="width:100%">🔐 Login / Sign Up</button>
+  </form>
+
+  <div class="hint">
+    🔑 <strong>Demo</strong><br>
+    Doctor → <strong>doctor1</strong> / Patient → <strong>patient1</strong> / Pharmacist → <strong>pharm1</strong><br>
+    Password → <strong>1234</strong>
+  </div>
+
+  <p id="login-error" class="error"></p>
+
 </div>
 
-<form id="login-form">
-
-<select id="role" style="display:none">
-<option value="doctor">Doctor</option>
-<option value="patient">Patient</option>
-</select>
-
-<div class="auth-mode">
-  <button type="button" class="auth-tab auth-tab-active" data-mode="login">Login</button>
-  <button type="button" class="auth-tab" data-mode="signup">Sign up</button>
-</div>
-<input type="hidden" id="auth-mode" value="login">
-
-<label>Username</label>
-<input id="username" type="text" placeholder="Enter username" required>
-
-<label>Password</label>
-<input id="password" type="password" placeholder="••••••••" required>
-
-<button type="submit" class="btn" style="width:100%">🔐 Login</button>
-
-</form>
-
-<div class="hint">
-🔑 <strong>Demo Credentials</strong><br>
-Doctor → <strong>doctor1</strong>, <strong>doctor2</strong><br>
-Patient → <strong>patient1</strong>, <strong>patient2</strong><br>
-Password → <strong>1234</strong>
-</div>
-
-<p id="login-error" class="error"></p>
-
-</div>
-
+<!-- ── DASHBOARD ───────────────────────────────────────────── -->
 <section id="dashboard-section" class="hidden">
   <div class="topbar">
     <div>
@@ -83,20 +72,15 @@ Password → <strong>1234</strong>
     <button id="logout-btn">Logout</button>
   </div>
 
+  <!-- ── DOCTOR DASHBOARD ──────────────────────────────────── -->
   <div id="doctor-dashboard" class="hidden">
     <div class="grid">
+
       <div class="card">
         <h4>Appointments</h4>
         <table>
           <thead>
-            <tr>
-              <th>Patient</th>
-              <th>Date</th>
-              <th>Time</th>
-              <th>Reason</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
+            <tr><th>Patient</th><th>Date</th><th>Time</th><th>Reason</th><th>Status</th><th>Actions</th></tr>
           </thead>
           <tbody id="doctor-appointments-body"></tbody>
         </table>
@@ -107,12 +91,59 @@ Password → <strong>1234</strong>
         <form id="doctor-record-form">
           <label>Patient Username</label>
           <input id="record-patient-name" type="text" placeholder="e.g. patient1" required>
-
           <label>Notes</label>
           <textarea id="record-notes" placeholder="Write notes..." required></textarea>
-
           <button class="btn btn-sm" type="submit">Save Record</button>
           <p id="doctor-record-message" class="success"></p>
+        </form>
+      </div>
+
+      <!-- Create Prescription -->
+      <div class="card">
+        <h4>💊 Create Prescription</h4>
+        <form id="prescription-form">
+          <label>Patient Username</label>
+          <input id="rx-patient" type="text" placeholder="e.g. patient1" required>
+          <label>Medicines (one per line: Name, Dosage, Frequency, Duration)</label>
+          <textarea id="rx-medicines" rows="4"
+            placeholder="Paracetamol, 500mg, twice daily, 5 days&#10;Amoxicillin, 250mg, three times daily, 7 days"
+            required></textarea>
+          <label>Assign Pharmacist</label>
+          <select id="rx-pharmacist">
+            <option value="">— Select Pharmacist (optional) —</option>
+          </select>
+          <button class="btn btn-sm" type="submit">Create Prescription</button>
+          <p id="rx-message" class="success"></p>
+        </form>
+      </div>
+
+      <!-- Add Scan Report -->
+      <div class="card">
+        <h4>🔬 Upload &amp; Analyze Scan / Report</h4>
+        <form id="scan-form">
+          <label>Patient Username</label>
+          <input id="scan-patient" type="text" placeholder="e.g. patient1" required>
+          <label>Report Type</label>
+          <select id="scan-type" required>
+            <option value="">— Select —</option>
+            <option>MRI</option>
+            <option>CT</option>
+            <option>X-ray</option>
+            <option>Ultrasound</option>
+            <option>ECG</option>
+            <option>Blood Test</option>
+          </select>
+          <label>Upload Image / Report <span style="font-weight:400;color:#888;">(JPEG · PNG · PDF — max 10 MB)</span></label>
+          <input id="scan-file" type="file" accept="image/*,.pdf"
+            style="padding:6px;border:1px dashed #aac;border-radius:8px;background:#f8fbff;cursor:pointer;">
+          <div id="scan-preview" style="display:none;margin:6px 0;text-align:center;">
+            <img id="scan-preview-img" style="max-height:120px;border-radius:6px;border:1px solid #d0dce8;">
+            <p id="scan-preview-name" style="font-size:.78rem;color:#666;margin-top:4px;"></p>
+          </div>
+          <label>Clinical Notes <span style="font-weight:400;color:#888;">(optional)</span></label>
+          <textarea id="scan-notes" placeholder="Clinical context, patient symptoms, referral reason..." rows="2"></textarea>
+          <button class="btn btn-sm" type="submit" id="scan-submit-btn">🔬 Analyze &amp; Open Report Editor</button>
+          <p id="scan-message" class="success"></p>
         </form>
       </div>
 
@@ -120,11 +151,7 @@ Password → <strong>1234</strong>
         <h4>Inventory</h4>
         <table>
           <thead>
-            <tr>
-              <th>Medicine</th>
-              <th>Stock</th>
-              <th>Price (₹)</th>
-            </tr>
+            <tr><th>Medicine</th><th>Stock</th><th>Price (₹)</th></tr>
           </thead>
           <tbody id="inventory-body"></tbody>
         </table>
@@ -135,37 +162,55 @@ Password → <strong>1234</strong>
         <form id="billing-form">
           <label>Patient Username</label>
           <input id="bill-patient-name" type="text" placeholder="e.g. patient1" required>
-
           <label>Medicine</label>
           <input id="bill-medicine" type="text" placeholder="e.g. Paracetamol" required>
-
           <label>Quantity</label>
           <input id="bill-quantity" type="number" min="1" value="1" required>
-
           <button class="btn btn-sm" type="submit">Generate Bill</button>
           <p id="billing-message" class="success"></p>
         </form>
       </div>
+
+      <!-- Doctor Prescriptions -->
+      <div class="card" style="grid-column: 1 / -1;">
+        <h4>My Prescriptions</h4>
+        <table>
+          <thead>
+            <tr><th>Patient</th><th>Date</th><th>Medicines</th><th>Status</th><th>Pharmacist</th><th>Notes</th></tr>
+          </thead>
+          <tbody id="doctor-rx-body"></tbody>
+        </table>
+      </div>
+
+      <!-- Doctor Scan Reports -->
+      <div class="card" style="grid-column: 1 / -1;">
+        <h4>Scan Reports</h4>
+        <table>
+          <thead>
+            <tr><th>Patient</th><th>Type</th><th>AI Finding</th><th>Anomaly</th><th>Status</th><th>Date</th><th>Action</th></tr>
+          </thead>
+          <tbody id="doctor-scans-body"></tbody>
+        </table>
+      </div>
+
     </div>
   </div>
 
+  <!-- ── PATIENT DASHBOARD ──────────────────────────────────── -->
   <div id="patient-dashboard" class="hidden">
     <div class="grid">
+
       <div class="card">
         <h4>Book Appointment</h4>
         <form id="appointment-form">
           <label>Doctor</label>
           <select id="appointment-doctor" required></select>
-
           <label>Date</label>
           <input id="appointment-date" type="date" required>
-
           <label>Time</label>
           <input id="appointment-time" type="time" required>
-
           <label>Reason</label>
           <input id="appointment-reason" type="text" placeholder="Reason for visit" required>
-
           <button class="btn btn-sm" type="submit">Book</button>
           <p id="appointment-message" class="success"></p>
         </form>
@@ -176,17 +221,41 @@ Password → <strong>1234</strong>
         <ul id="patient-records-list"></ul>
       </div>
 
+      <!-- Health Metrics -->
+      <div class="card">
+        <h4>📊 Health Metrics</h4>
+        <form id="metrics-form">
+          <label>BP Systolic (mmHg)</label>
+          <input id="m-systolic" type="number" placeholder="e.g. 120" min="60" max="250">
+          <label>BP Diastolic (mmHg)</label>
+          <input id="m-diastolic" type="number" placeholder="e.g. 80" min="40" max="150">
+          <label>Blood Sugar (mg/dL)</label>
+          <input id="m-sugar" type="number" placeholder="e.g. 95" min="30" max="600">
+          <label>Weight (kg)</label>
+          <input id="m-weight" type="number" step="0.1" placeholder="e.g. 70">
+          <label>Temperature (°C)</label>
+          <input id="m-temp" type="number" step="0.1" placeholder="e.g. 37.0">
+          <button class="btn btn-sm" type="submit">Save &amp; Analyze</button>
+          <p id="metrics-message" class="success"></p>
+        </form>
+        <div id="risk-display" style="margin-top:10px;"></div>
+      </div>
+
+      <!-- AI Chatbot -->
+      <div class="card">
+        <h4>🤖 AI Health Assistant</h4>
+        <div id="chat-messages" style="min-height:140px;max-height:220px;overflow-y:auto;background:#f8f9fa;border-radius:8px;padding:10px;margin-bottom:10px;font-size:0.88rem;line-height:1.5;white-space:pre-wrap;"></div>
+        <form id="chat-form" style="display:flex;gap:8px;">
+          <input id="chat-input" type="text" placeholder="Ask about your health, meds, appointments..." style="flex:1;">
+          <button class="btn btn-sm" type="submit">Send</button>
+        </form>
+      </div>
+
       <div class="card" style="grid-column: 1 / -1;">
         <h4>My Appointments</h4>
         <table>
           <thead>
-            <tr>
-              <th>Doctor</th>
-              <th>Date</th>
-              <th>Time</th>
-              <th>Reason</th>
-              <th>Status</th>
-            </tr>
+            <tr><th>Doctor</th><th>Date</th><th>Time</th><th>Reason</th><th>Status</th></tr>
           </thead>
           <tbody id="patient-appointments-body"></tbody>
         </table>
@@ -196,29 +265,75 @@ Password → <strong>1234</strong>
         <h4>My Bills</h4>
         <table>
           <thead>
-            <tr>
-              <th>Medicine</th>
-              <th>Qty</th>
-              <th>Total (₹)</th>
-              <th>Actions</th>
-            </tr>
+            <tr><th>Medicine</th><th>Qty</th><th>Total (₹)</th><th>Actions</th></tr>
           </thead>
           <tbody id="patient-bills-body"></tbody>
         </table>
       </div>
+
+      <!-- Patient Prescriptions -->
+      <div class="card" style="grid-column: 1 / -1;">
+        <h4>💊 My Prescriptions</h4>
+        <table>
+          <thead>
+            <tr><th>Doctor</th><th>Date</th><th>Medicines</th><th>Status</th><th>Pharmacist</th><th>Notes</th></tr>
+          </thead>
+          <tbody id="patient-rx-body"></tbody>
+        </table>
+      </div>
+
+      <!-- Patient Scan Reports -->
+      <div class="card" style="grid-column: 1 / -1;">
+        <h4>🔬 My Scan Reports</h4>
+        <table>
+          <thead>
+            <tr><th>Type</th><th>Doctor</th><th>Status</th><th>Summary</th><th>Date</th><th></th></tr>
+          </thead>
+          <tbody id="patient-scans-body"></tbody>
+        </table>
+      </div>
+
     </div>
   </div>
+
 </section>
 
 </main>
+
+<!-- ── Patient: Full Report View Modal ──────────────────────────────────────── -->
+<div id="report-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2000;overflow-y:auto;">
+  <div style="background:#fff;max-width:720px;margin:36px auto 60px;border-radius:16px;overflow:hidden;
+              box-shadow:0 12px 48px rgba(0,0,0,.3);">
+    <!-- Modal header -->
+    <div style="background:linear-gradient(135deg,#1e3a5f,#2980b9);color:#fff;
+                padding:18px 24px;display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <h3 id="rm-title" style="font-size:1.1rem;margin:0;">Scan Report</h3>
+        <p id="rm-subtitle" style="font-size:.8rem;opacity:.8;margin:2px 0 0;"></p>
+      </div>
+      <button onclick="document.getElementById('report-modal').style.display='none'"
+        style="background:none;border:none;color:#fff;font-size:1.5rem;cursor:pointer;line-height:1;">✕</button>
+    </div>
+    <!-- Image -->
+    <div id="rm-image-wrap" style="display:none;background:#000;text-align:center;max-height:360px;overflow:hidden;">
+      <img id="rm-image" style="max-height:360px;max-width:100%;object-fit:contain;">
+    </div>
+    <!-- Report body -->
+    <div style="padding:24px;" id="rm-body"></div>
+    <div style="padding:14px 24px;text-align:right;border-top:1px solid #eef2f6;background:#f8fbff;">
+      <button class="btn" onclick="document.getElementById('report-modal').style.display='none'"
+        style="background:#2980b9;color:#fff;padding:8px 22px;">Close</button>
+    </div>
+  </div>
+</div>
+
 <script>
-function setRole(v,b){
-document.getElementById('role').value=v;
-document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-b.classList.add('active');
+function setRole(v, b) {
+  document.getElementById("role").value = v;
+  document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
+  b.classList.add("active");
 }
 </script>
-
 <script src="script.js"></script>
 
 </body>

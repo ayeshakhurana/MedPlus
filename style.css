@@ -308,4 +308,30 @@
     border-top:1px solid #dce4f5;
     background:#fff;
   }
+
+  /* ── Status badges (used in prescription / scan tables) ── */
+  .badge{
+    display:inline-block;
+    padding:3px 10px;
+    border-radius:20px;
+    font-size:.73rem;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+  }
+  .badge-pending   { background:#fff3cd; color:#856404; }
+  .badge-verified  { background:#cce5ff; color:#004085; }
+  .badge-approved  { background:#d4edda; color:#155724; }
+  .badge-dispensed { background:#d1ecf1; color:#0c5460; }
+  .badge-flagged   { background:#f8d7da; color:#721c24; }
+  .badge-rejected  { background:#e2e3e5; color:#383d41; }
+  .badge-booked    { background:#d4edda; color:#155724; }
+  .badge-denied    { background:#f8d7da; color:#721c24; }
+
+  /* ── Risk display bars ── */
+  #risk-display { font-size:.87rem; }
+  #chat-messages { min-height:120px; max-height:200px; overflow-y:auto;
+    background:#f8f9fa; border-radius:8px; padding:10px;
+    margin-bottom:10px; font-size:.87rem; line-height:1.5; white-space:pre-wrap; }
+
   
